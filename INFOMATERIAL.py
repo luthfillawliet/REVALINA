@@ -27,6 +27,10 @@ import pyautogui
 #To write into excel
 from openpyxl import Workbook, load_workbook
 import os
+import subprocess
+import psutil
+from subprocess import Popen, PIPE
+import signal
 
 #Import file txdirectory
 import txdirect
@@ -71,11 +75,22 @@ class InfoMaterial:
             try:
                 #
                 print("Membuka file report harian")
-                os.startfile(filenamereportharian)
-                time.sleep(5)
+                # os.startfile(filenamereportharian)
+                # time.sleep(5)
                 #pyautogui.click(851,608)
                 
+                shell_process = subprocess.Popen([filenamereportharian],shell=True) #buka dengan shell
+                time.sleep(5)
+                print(shell_process.pid) #print pid nya
                 
+                #Returned pid is the pid of the parent shell, not of your process itself. Killing it won't be sufficient - it will only kill a shell, not the child process. We need to get to the child:
+                parent = psutil.Process(shell_process.pid)
+                children = parent.children(recursive=True)
+                print(children)
+                child_pid = children[0].pid
+                print(child_pid) #This is the pid you want to close. Now we can terminate the process:
+                
+                #Buka file export untuk merefresh valuenya report harian yang d vlookup
                 print("Membuka file export")
                 os.startfile((fileexport))
                 time.sleep(3)
@@ -88,10 +103,13 @@ class InfoMaterial:
                 try:
                     myscreenshoot = pyautogui.screenshot(region=(x1,y1,(x2-x1),(y2-y1)))
                     myscreenshoot.save("range.png")
-                    pyautogui.keyDown('alt')
-                    pyautogui.press('f4')
-                    pyautogui.keyUp('alt')
-                    pyautogui.press("enter")
+                    # pyautogui.keyDown('alt')
+                    # pyautogui.press('f4')
+                    # pyautogui.keyUp('alt')
+                    # pyautogui.press("enter")
+                    os.kill(child_pid, signal.SIGTERM)
+                        # or
+                    #subprocess.check_output("Taskkill /PID %d /F" % child_pid)
                     return "berhasil"
                 except:
                     return "gagal screenshoot"
